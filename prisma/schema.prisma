@@ -1,0 +1,365 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CLIENT
+  GESTIONNAIRE
+  ADMIN
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SourcePlatform {
+  ALIEXPRESS
+  SHEIN
+  TAOBAO
+  TEMU
+  DHGATE
+  OTHER
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAYMENT_CONFIRMED
+  ORDERED_FROM_SUPPLIER
+  IN_TRANSIT_TO_ABIDJAN
+  RECEIVED_IN_ABIDJAN
+  IN_PREPARATION
+  IN_DELIVERY
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  CINETPAY_WAVE
+  CINETPAY_ORANGE
+  CASH_ON_DELIVERY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum ShipmentStatus {
+  DRAFT
+  SENT_TO_ABIDJAN
+  RECEIVED_IN_ABIDJAN
+  CLOSED
+}
+
+enum ImportJobStatus {
+  QUEUED
+  RUNNING
+  SUCCESS
+  FAILED
+}
+
+model User {
+  id            String   @id @default(cuid())
+  email         String?  @unique
+  phone         String?  @unique
+  emailVerified DateTime?
+  password      String?
+  role          UserRole @default(CLIENT)
+  firstName     String?
+  lastName      String?
+  city          String?
+  commune       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accounts      Account[]
+  sessions      Session[]
+  orders        Order[]
+  cart          CartItem[]
+  reviews       Review[]
+  notifications Notification[]
+  addresses     UserAddress[]
+  activityLogs  ActivityLog[]
+  createdSupplierOrders SupplierOrder[] @relation("SupplierOrderCreator")
+  createdShipments ShipmentToAbidjan[] @relation("ShipmentCreator")
+  receivedShipments ShipmentToAbidjan[] @relation("ShipmentReceiver")
+  statusActions  OrderStatusHistory[] @relation("OrderStatusActor")
+
+  @@index([email])
+  @@index([role])
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  featured  Boolean   @default(false)
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id              String        @id @default(cuid())
+  name            String
+  slug            String        @unique
+  description     String?
+  originalPrice   Float
+  salePrice       Float
+  cost            Float
+  discount        Int           @default(0)
+  images          String[]      @default([])
+  stock           Int           @default(0)
+  sku             String        @unique
+  sourcePlatform  SourcePlatform @default(ALIEXPRESS)
+  sourceUrl       String
+  sourceProductId String
+  categoryId      String
+  category        Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  status          ProductStatus @default(ACTIVE)
+  featured        Boolean       @default(false)
+  rating          Float?        @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  reviews         Review[]
+  rawSources      ProductRaw[]
+
+  @@index([categoryId])
+  @@unique([sourcePlatform, sourceProductId])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveryCity    String
+  deliveryCommune String?
+  deliveryAddress String
+  deliveryPhone   String
+  subtotal        Float
+  shippingCost    Float
+  total           Float
+  status          OrderStatus   @default(PENDING_PAYMENT)
+  paymentMethod   PaymentMethod?
+  paymentId       String?
+  paymentStatus   PaymentStatus @default(PENDING)
+  items           OrderItem[]
+  statuses        OrderStatusHistory[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  supplierOrders  SupplierOrderItem[]
+  shipments       ShipmentOrder[]
+
+  @@index([userId])
+  @@index([status])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+
+  @@index([orderId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating    Int
+  title     String
+  content   String
+  createdAt DateTime @default(now())
+
+  @@unique([productId, userId])
+}
+
+model SupplierOrder {
+  id            String      @id @default(cuid())
+  supplierName  String
+  supplierRef   String?
+  notes         String?
+  createdById   String
+  createdBy     User        @relation("SupplierOrderCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt     DateTime    @default(now())
+  orderLinks    SupplierOrderItem[]
+}
+
+model SupplierOrderItem {
+  id              String         @id @default(cuid())
+  supplierOrderId String
+  supplierOrder   SupplierOrder  @relation(fields: [supplierOrderId], references: [id], onDelete: Cascade)
+  orderId         String
+  order           Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierOrderId, orderId])
+}
+
+model ShipmentToAbidjan {
+  id             String         @id @default(cuid())
+  carrier        String?
+  trackingNumber String?        @unique
+  status         ShipmentStatus @default(DRAFT)
+  notes          String?
+  createdById    String
+  createdBy      User           @relation("ShipmentCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  receivedById   String?
+  receivedBy     User?          @relation("ShipmentReceiver", fields: [receivedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  orders         ShipmentOrder[]
+}
+
+model ShipmentOrder {
+  id         String            @id @default(cuid())
+  shipmentId String
+  shipment   ShipmentToAbidjan @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  orderId    String
+  order      Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([shipmentId, orderId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  from      OrderStatus?
+  to        OrderStatus
+  note      String?
+  actorId   String?
+  actor     User?       @relation("OrderStatusActor", fields: [actorId], references: [id], onDelete: SetNull)
+  visibleToClient Boolean @default(false)
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+}
+
+model UserAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  city      String
+  commune   String
+  address   String
+  phone     String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ImportJob {
+  id          String          @id @default(cuid())
+  platform    SourcePlatform
+  query       String?
+  status      ImportJobStatus @default(QUEUED)
+  startedAt   DateTime?
+  finishedAt  DateTime?
+  error       String?
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  raws        ProductRaw[]
+}
+
+model ProductRaw {
+  id          String         @id @default(cuid())
+  importJobId String
+  importJob   ImportJob      @relation(fields: [importJobId], references: [id], onDelete: Cascade)
+  platform    SourcePlatform
+  sourceProductId String
+  sourceUrl   String
+  payload     Json
+  normalized  Boolean        @default(false)
+  productId   String?
+  product     Product?       @relation(fields: [productId], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+
+  @@unique([platform, sourceProductId, importJobId])
+}
+
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  user               User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
