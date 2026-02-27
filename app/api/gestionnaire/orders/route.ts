@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { UserRole } from '@prisma/client';
+import { OrderStatus, UserRole } from '@prisma/client';
 import { ok, fail } from '@/lib/api';
 import { requireAuth } from '@/lib/auth-helpers';
 import { prisma } from '@/lib/prisma';
@@ -12,10 +12,19 @@ export async function GET(request: NextRequest) {
     if (session.user.role !== UserRole.GESTIONNAIRE) return fail('Interdit', 403);
 
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'IN_PREPARATION';
+    const status = searchParams.get('status') || 'ACTIVE';
     const { page, limit, skip } = getPagination(searchParams);
 
-    const where = { status: status as never };
+    const managedStatuses: OrderStatus[] = [
+      OrderStatus.RECEIVED_IN_ABIDJAN,
+      OrderStatus.IN_PREPARATION,
+      OrderStatus.IN_DELIVERY,
+    ];
+
+    const where =
+      status === 'ACTIVE'
+        ? { status: { in: managedStatuses } }
+        : { status: status as OrderStatus };
 
     const [orders, total] = await Promise.all([
       prisma.order.findMany({

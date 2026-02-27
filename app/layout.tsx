@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import WhatsAppBotBubble from '@/components/WhatsAppBotBubble';
 import SessionProvider from '@/components/providers/SessionProvider';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -32,6 +33,7 @@ export default function RootLayout({
             </main>
             <Footer />
           </div>
+          <WhatsAppBotBubble />
           <Toaster position="top-center" />
         </SessionProvider>
       </body>

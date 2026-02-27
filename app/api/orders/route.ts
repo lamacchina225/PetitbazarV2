@@ -1,9 +1,22 @@
 import { NextRequest } from 'next/server';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { ok, fail } from '@/lib/api';
 import { requireAuth } from '@/lib/auth-helpers';
 import { getPagination } from '@/lib/pagination';
+
+function isPaymentMethodAvailable(method: string): boolean {
+  if (method === 'CINETPAY_MOBILE' || method === 'CINETPAY_WAVE' || method === 'CINETPAY_ORANGE') {
+    return process.env.NEXT_PUBLIC_ENABLE_PAYMENT_CINETPAY !== 'false';
+  }
+  if (method === 'STRIPE') {
+    return process.env.NEXT_PUBLIC_ENABLE_PAYMENT_STRIPE !== 'false';
+  }
+  if (method === 'CASH_ON_DELIVERY') {
+    return process.env.NEXT_PUBLIC_ENABLE_PAYMENT_COD !== 'false';
+  }
+  return false;
+}
 
 function orderNumber() {
   return `PB-${Date.now()}`;
@@ -57,6 +70,22 @@ export async function POST(request: NextRequest) {
     if (!deliveryCity || !deliveryAddress || !deliveryPhone || !paymentMethod) {
       return fail('Donnees invalides', 400);
     }
+    if (!isPaymentMethodAvailable(String(paymentMethod))) {
+      return fail('Methode de paiement indisponible', 400);
+    }
+
+    if (String(deliveryCity).toLowerCase() !== 'abidjan') {
+      return fail('Livraison uniquement disponible a Abidjan', 400);
+    }
+
+    const normalizedPaymentMethod: PaymentMethod =
+      paymentMethod === 'CINETPAY_MOBILE'
+        ? PaymentMethod.CINETPAY_WAVE
+        : (paymentMethod as PaymentMethod);
+
+    if (!Object.values(PaymentMethod).includes(normalizedPaymentMethod)) {
+      return fail('Methode de paiement invalide', 400);
+    }
 
     const cartItems = await prisma.cartItem.findMany({
       where: { userId: session.user.id },
@@ -81,7 +110,7 @@ export async function POST(request: NextRequest) {
           subtotal,
           shippingCost,
           total,
-          paymentMethod,
+          paymentMethod: normalizedPaymentMethod,
           status: OrderStatus.PENDING_PAYMENT,
           paymentStatus: PaymentStatus.PENDING,
           items: {

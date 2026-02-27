@@ -13,6 +13,14 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
 
     const { status } = await request.json();
     const to = status as OrderStatus;
+    const allowedTargets: OrderStatus[] = [
+      OrderStatus.IN_PREPARATION,
+      OrderStatus.IN_DELIVERY,
+      OrderStatus.DELIVERED,
+    ];
+    if (!allowedTargets.includes(to)) {
+      return fail('Statut non autorise pour le gestionnaire', 403);
+    }
 
     const order = await prisma.order.findUnique({ where: { id: params.id } });
     if (!order) return fail('Commande non trouvee', 404);

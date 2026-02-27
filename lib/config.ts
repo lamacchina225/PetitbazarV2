@@ -84,15 +84,26 @@ export const SUPPLIERS = {
   DHGATE: { label: 'DHgate', color: 'green' },
 };
 
-// Méthodes de paiement
+// Methodes de paiement
 export const PAYMENT_METHODS = {
-  STRIPE: { label: 'Carte bancaire (Stripe)', icon: '💳' },
-  CINETPAY_MOBILE: { label: 'Mobile Money (Wave/MTN/Orange)', icon: '📱' },
+  STRIPE: { label: 'Carte bancaire (Stripe)', icon: 'card' },
+  CINETPAY_MOBILE: { label: 'Mobile Money (Wave/MTN/Orange)', icon: 'mobile' },
+  CASH_ON_DELIVERY: { label: 'Paiement a la livraison', icon: 'cash' },
   // legacy placeholders kept for compatibility in db, not shown in UI
-  CINETPAY_WAVE: { label: 'Wave (Mobile Money)', icon: '📱' },
-  CINETPAY_ORANGE: { label: 'Orange Money', icon: '🍊' },
-  BANK_TRANSFER: { label: 'Virement bancaire', icon: '🏦' },
+  CINETPAY_WAVE: { label: 'Wave (Mobile Money)', icon: 'mobile' },
+  CINETPAY_ORANGE: { label: 'Orange Money', icon: 'mobile' },
+  BANK_TRANSFER: { label: 'Virement bancaire', icon: 'bank' },
 };
+
+export const PAYMENT_METHOD_AVAILABILITY = {
+  CINETPAY_MOBILE: process.env.NEXT_PUBLIC_ENABLE_PAYMENT_CINETPAY !== 'false',
+  STRIPE: process.env.NEXT_PUBLIC_ENABLE_PAYMENT_STRIPE !== 'false',
+  CASH_ON_DELIVERY: process.env.NEXT_PUBLIC_ENABLE_PAYMENT_COD !== 'false',
+};
+
+export function isPaymentMethodEnabled(method: keyof typeof PAYMENT_METHOD_AVAILABILITY): boolean {
+  return PAYMENT_METHOD_AVAILABILITY[method];
+}
 
 // Délais de livraison estimés (en jours)
 export const SHIPPING_TIMES = {
@@ -165,3 +176,7 @@ export const ANALYTICS = {
   ENABLE_GA: process.env.NEXT_PUBLIC_GA_ID !== undefined,
   GA_ID: process.env.NEXT_PUBLIC_GA_ID,
 };
+
+
+
+

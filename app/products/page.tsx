@@ -1,7 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
-import { Search } from 'lucide-react';
+import {
+  Search,
+  Grid2x2,
+  Home,
+  Smartphone,
+  Shirt,
+  Baby,
+  Sparkles,
+  ChefHat,
+  Tags,
+  type LucideIcon,
+} from 'lucide-react';
 import { Prisma, ProductStatus } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
@@ -42,6 +53,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     where: { featured: true },
   });
 
+  const getCategoryIcon = (name: string, slug: string): LucideIcon => {
+    const value = `${name} ${slug}`.toLowerCase();
+    if (value.includes('maison') || value.includes('home')) return Home;
+    if (value.includes('electro') || value.includes('electron')) return Smartphone;
+    if (value.includes('mode') || value.includes('vetement') || value.includes('fashion')) return Shirt;
+    if (value.includes('bebe') || value.includes('enfant') || value.includes('kids')) return Baby;
+    if (value.includes('beaute') || value.includes('beauty')) return Sparkles;
+    if (value.includes('cuisine') || value.includes('kitchen')) return ChefHat;
+    return Tags;
+  };
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       {/* Header */}
@@ -65,30 +87,53 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         </div>
 
         {/* Categories Filter */}
-        <div className="flex gap-2 overflow-x-auto pb-4">
+        <div className="flex items-start gap-4 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           <Link
             href="/products"
-            className={`px-4 py-2 rounded-lg whitespace-nowrap ${
-              !category
-                ? 'bg-slate-900 text-white'
-                : 'border border-slate-300 hover:bg-slate-50'
-            }`}
+            title="Tous"
+            aria-label="Tous"
+            className="flex w-14 shrink-0 flex-col items-center gap-2"
           >
-            Tous
-          </Link>
-          {categories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/products?category=${cat.slug}`}
-              className={`px-4 py-2 rounded-lg whitespace-nowrap ${
-                category === cat.slug
-                  ? 'bg-slate-900 text-white'
-                  : 'border border-slate-300 hover:bg-slate-50'
+            <span
+              className={`inline-grid h-12 w-12 place-items-center rounded-xl leading-none transition ${
+                !category
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
-              {cat.name}
-            </Link>
-          ))}
+              <Grid2x2 size={20} strokeWidth={2.2} />
+            </span>
+            <span className={`text-center text-xs font-medium ${!category ? 'text-slate-900' : 'text-slate-600'}`}>
+              Tous
+            </span>
+          </Link>
+
+          {categories.map((cat) => {
+            const Icon = getCategoryIcon(cat.name, cat.slug);
+            const isActive = category === cat.slug;
+            return (
+              <Link
+                key={cat.id}
+                href={`/products?category=${cat.slug}`}
+                title={cat.name}
+                aria-label={cat.name}
+                className="flex w-16 shrink-0 flex-col items-center gap-2"
+              >
+                <span
+                  className={`inline-grid h-12 w-12 place-items-center rounded-xl leading-none transition ${
+                    isActive
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={2.2} />
+                </span>
+                <span className={`line-clamp-2 text-center text-xs font-medium ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                  {cat.name}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
 

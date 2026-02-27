@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { ShoppingCart, Menu, X } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
@@ -32,8 +33,15 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-slate-900">🏪 PetitBazar</span>
+          <Link href="/" aria-label="Accueil" className="flex items-center">
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={208}
+              height={57}
+              className="h-[3.25rem] w-auto object-contain"
+              priority
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -144,3 +152,4 @@ export default function Navbar() {
     </nav>
   );
 }
+

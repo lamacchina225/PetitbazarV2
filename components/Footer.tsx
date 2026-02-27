@@ -56,12 +56,12 @@ export default function Footer() {
                 <a href="https://tiktok.com" className="text-slate-300 hover:text-white">TikTok</a>
                 <a href="https://instagram.com" className="text-slate-300 hover:text-white">Instagram</a>
                 <a href="https://facebook.com" className="text-slate-300 hover:text-white">Facebook</a>
-                <a href="https://wa.me/22512345678" className="text-slate-300 hover:text-white">WhatsApp</a>
+                <a href="https://wa.me/225779622084" target="_blank" rel="noreferrer" className="text-slate-300 hover:text-white">WhatsApp</a>
               </div>
             </div>
             <div>
               <h3 className="font-bold mb-2">Contactez-nous</h3>
-              <p className="text-sm text-slate-300">📞 +225 01 23 45 67 89</p>
+              <p className="text-sm text-slate-300">📞 07 79 62 20 84</p>
               <p className="text-sm text-slate-300">📧 contact@petitbazar.ci</p>
             </div>
           </div>
@@ -74,3 +74,4 @@ export default function Footer() {
     </footer>
   );
 }
+

@@ -114,7 +114,7 @@ export const cinetpayService = {
           transaction_id: orderId,
           description: description || `Order ${orderId}`,
           return_url: `${process.env.NEXTAUTH_URL}/api/cinetpay/callback`,
-          notify_url: `${process.env.NEXTAUTH_URL}/api/cinetpay/webhook`,
+          notify_url: `${process.env.NEXTAUTH_URL}/api/webhooks/cinetpay`,
         }),
       });
 

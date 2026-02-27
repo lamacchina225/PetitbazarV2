@@ -48,6 +48,23 @@ export async function POST(request: NextRequest) {
           metadata: body,
         },
       });
+
+      if (isSuccess) {
+        const admins = await tx.user.findMany({
+          where: { role: 'ADMIN' },
+          select: { id: true },
+        });
+
+        if (admins.length > 0) {
+          await tx.notification.createMany({
+            data: admins.map((admin) => ({
+              userId: admin.id,
+              title: 'Nouvelle commande payee',
+              message: `La commande ${order.orderNumber} est payee. Action admin requise: commander chez le fournisseur.`,
+            })),
+          });
+        }
+      }
     });
 
     return ok({ processed: true, orderId: order.id });
