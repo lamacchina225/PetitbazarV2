@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { Toaster } from 'react-hot-toast';
+import { Toaster as HotToaster } from 'react-hot-toast';
+import { Toaster as SonnerToaster } from 'sonner';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import WhatsAppBotBubble from '@/components/WhatsAppBotBubble';
@@ -34,7 +35,8 @@ export default function RootLayout({
             <Footer />
           </div>
           <WhatsAppBotBubble />
-          <Toaster position="top-center" />
+          <HotToaster position="top-center" />
+          <SonnerToaster position="top-center" richColors />
         </SessionProvider>
       </body>
     </html>

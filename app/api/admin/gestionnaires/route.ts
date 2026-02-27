@@ -11,7 +11,8 @@ export async function POST(request: NextRequest) {
     if (!session) return fail('Non authentifie', 401);
     if (session.user.role !== UserRole.ADMIN) return fail('Interdit', 403);
 
-    const { firstName, lastName, email, phone, city, commune, password } = await request.json();
+    const { firstName, lastName, email, phone, city, commune, password, role } = await request.json();
+    const targetRole = role === UserRole.ADMIN ? UserRole.ADMIN : UserRole.GESTIONNAIRE;
 
     if (!firstName || !lastName || !email || !password) {
       return fail('Donnees invalides', 400);
@@ -28,12 +29,40 @@ export async function POST(request: NextRequest) {
         phone: phone || null,
         city: city || 'Abidjan',
         commune: commune || null,
-        role: UserRole.GESTIONNAIRE,
+        role: targetRole,
         password: await bcryptjs.hash(password, 10),
       },
     });
 
-    return ok(user, 'Gestionnaire cree', 201);
+    return ok(user, targetRole === UserRole.ADMIN ? 'Admin cree' : 'Gestionnaire cree', 201);
+  } catch (error) {
+    return fail('Erreur serveur', 500, error);
+  }
+}
+
+export async function GET() {
+  try {
+    const session = await requireAuth();
+    if (!session) return fail('Non authentifie', 401);
+    if (session.user.role !== UserRole.ADMIN) return fail('Interdit', 403);
+
+    const gestionnaires = await prisma.user.findMany({
+      where: { role: { in: [UserRole.GESTIONNAIRE, UserRole.ADMIN] } },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        phone: true,
+        city: true,
+        commune: true,
+        role: true,
+        createdAt: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return ok({ gestionnaires });
   } catch (error) {
     return fail('Erreur serveur', 500, error);
   }

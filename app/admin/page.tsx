@@ -15,7 +15,7 @@ export default async function AdminDashboard() {
   }
 
   // Fetch dashboard stats
-  const [totalOrders, totalRevenue, totalUsers, pendingOrders] = await Promise.all([
+  const [totalOrders, totalRevenue, totalUsers, pendingOrders, newPaidOrders, toShip] = await Promise.all([
     prisma.order.count(),
     prisma.order.aggregate({
       _sum: { total: true },
@@ -23,6 +23,8 @@ export default async function AdminDashboard() {
     }),
     prisma.user.count({ where: { role: 'CLIENT' } }),
     prisma.order.count({ where: { status: 'PENDING_PAYMENT' } }),
+    prisma.order.count({ where: { status: 'PAYMENT_CONFIRMED' } }),
+    prisma.order.count({ where: { status: 'ORDERED_FROM_SUPPLIER' } }),
   ]);
 
   return (
@@ -107,15 +109,31 @@ export default async function AdminDashboard() {
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href="/admin/orders"
-              className="w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
+              className="relative w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
             >
               Voir les commandes
+              {newPaidOrders > 0 && (
+                <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                  {newPaidOrders > 99 ? '99+' : newPaidOrders}
+                </span>
+              )}
             </Link>
             <Link
-              href="/admin/orders?status=PENDING_PAYMENT"
+              href="/admin/orders?status=PAYMENT_CONFIRMED"
               className="w-full rounded border border-red-300 px-4 py-2 text-center text-red-600 hover:bg-red-50 sm:w-auto"
             >
-              En attente de paiement
+              Nouvelles commandes payees
+            </Link>
+            <Link
+              href="/admin/orders?status=ORDERED_FROM_SUPPLIER"
+              className="relative w-full rounded border border-slate-300 px-4 py-2 text-center hover:bg-slate-50 sm:w-auto"
+            >
+              A expedier
+              {toShip > 0 && (
+                <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-slate-900 px-1 text-[11px] font-bold text-white">
+                  {toShip > 99 ? '99+' : toShip}
+                </span>
+              )}
             </Link>
           </div>
         </div>

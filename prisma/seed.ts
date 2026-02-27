@@ -65,9 +65,9 @@ async function main() {
       create: { name: 'Electronique', slug: 'electronique', featured: true },
     }),
     prisma.category.upsert({
-      where: { slug: 'maison' },
-      update: { name: 'Maison', featured: true },
-      create: { name: 'Maison', slug: 'maison', featured: true },
+      where: { slug: 'accessoires' },
+      update: { name: 'Accessoires', featured: true },
+      create: { name: 'Accessoires', slug: 'accessoires', featured: true },
     }),
     prisma.category.upsert({
       where: { slug: 'beaute' },

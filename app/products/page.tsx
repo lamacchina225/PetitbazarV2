@@ -4,12 +4,10 @@ import ProductCard from '@/components/ProductCard';
 import {
   Search,
   Grid2x2,
-  Home,
+  Package,
   Smartphone,
   Shirt,
-  Baby,
   Sparkles,
-  ChefHat,
   Tags,
   type LucideIcon,
 } from 'lucide-react';
@@ -55,13 +53,17 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
   const getCategoryIcon = (name: string, slug: string): LucideIcon => {
     const value = `${name} ${slug}`.toLowerCase();
-    if (value.includes('maison') || value.includes('home')) return Home;
+    if (value.includes('accessoire') || value.includes('maison') || value.includes('home')) return Package;
     if (value.includes('electro') || value.includes('electron')) return Smartphone;
     if (value.includes('mode') || value.includes('vetement') || value.includes('fashion')) return Shirt;
-    if (value.includes('bebe') || value.includes('enfant') || value.includes('kids')) return Baby;
     if (value.includes('beaute') || value.includes('beauty')) return Sparkles;
-    if (value.includes('cuisine') || value.includes('kitchen')) return ChefHat;
     return Tags;
+  };
+
+  const displayCategoryName = (name: string, slug: string): string => {
+    const value = `${name} ${slug}`.toLowerCase();
+    if (value.includes('maison') || value.includes('accessoire')) return 'Accessoires';
+    return name;
   };
 
   return (
@@ -88,6 +90,34 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
 
         {/* Categories Filter */}
         <div className="flex items-start gap-4 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {categories.map((cat) => {
+            const Icon = getCategoryIcon(cat.name, cat.slug);
+            const isActive = category === cat.slug;
+            const label = displayCategoryName(cat.name, cat.slug);
+            return (
+              <Link
+                key={cat.id}
+                href={`/products?category=${cat.slug}`}
+                title={label}
+                aria-label={label}
+                className="flex w-16 shrink-0 flex-col items-center gap-2"
+              >
+                <span
+                  className={`inline-grid h-12 w-12 place-items-center rounded-xl leading-none transition ${
+                    isActive
+                      ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/10'
+                      : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Icon size={19} strokeWidth={1.9} />
+                </span>
+                <span className={`line-clamp-2 text-center text-xs font-medium ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
+                  {label}
+                </span>
+              </Link>
+            );
+          })}
+
           <Link
             href="/products"
             title="Tous"
@@ -97,43 +127,16 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             <span
               className={`inline-grid h-12 w-12 place-items-center rounded-xl leading-none transition ${
                 !category
-                  ? 'bg-slate-900 text-white shadow-sm'
+                  ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/10'
                   : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
-              <Grid2x2 size={20} strokeWidth={2.2} />
+              <Grid2x2 size={19} strokeWidth={1.9} />
             </span>
             <span className={`text-center text-xs font-medium ${!category ? 'text-slate-900' : 'text-slate-600'}`}>
               Tous
             </span>
           </Link>
-
-          {categories.map((cat) => {
-            const Icon = getCategoryIcon(cat.name, cat.slug);
-            const isActive = category === cat.slug;
-            return (
-              <Link
-                key={cat.id}
-                href={`/products?category=${cat.slug}`}
-                title={cat.name}
-                aria-label={cat.name}
-                className="flex w-16 shrink-0 flex-col items-center gap-2"
-              >
-                <span
-                  className={`inline-grid h-12 w-12 place-items-center rounded-xl leading-none transition ${
-                    isActive
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50'
-                  }`}
-                >
-                  <Icon size={20} strokeWidth={2.2} />
-                </span>
-                <span className={`line-clamp-2 text-center text-xs font-medium ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
-                  {cat.name}
-                </span>
-              </Link>
-            );
-          })}
         </div>
       </div>
 

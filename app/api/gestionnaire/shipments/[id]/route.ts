@@ -84,17 +84,17 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
         if (toUpdate.length > 0) {
           await tx.order.updateMany({
             where: { id: { in: toUpdate.map((o) => o.id) } },
-            data: { status: OrderStatus.RECEIVED_IN_ABIDJAN },
+            data: { status: OrderStatus.IN_PREPARATION },
           });
 
           await tx.orderStatusHistory.createMany({
             data: toUpdate.map((o) => ({
               orderId: o.id,
               from: o.status,
-              to: OrderStatus.RECEIVED_IN_ABIDJAN,
+              to: OrderStatus.IN_PREPARATION,
               actorId: session.user.id,
-              visibleToClient: false,
-              note: `Colis ${updatedShipment.id} recu a Abidjan`,
+              visibleToClient: true,
+              note: `Colis ${updatedShipment.id} recu a Abidjan, commande passee en preparation`,
             })),
           });
         }
@@ -109,7 +109,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
             data: admins.map((a) => ({
               userId: a.id,
               title: 'Colis recu a Abidjan',
-              message: `Le colis ${updatedShipment.id} est recu. Commandes: ${orderNumbers}`,
+              message: `Le colis ${updatedShipment.id} est recu. Commandes passees en preparation: ${orderNumbers}`,
             })),
           });
         }

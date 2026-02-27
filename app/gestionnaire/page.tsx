@@ -16,10 +16,12 @@ export default async function GestionnaireDashboard() {
   }
 
   // Fetch dashboard stats
-  const [totalShipments, toReceive, delivered] = await Promise.all([
+  const [totalShipments, toReceive, delivered, inPreparation, inDelivery] = await Promise.all([
     prisma.shipmentToAbidjan.count(),
     prisma.shipmentToAbidjan.count({ where: { status: ShipmentStatus.SENT_TO_ABIDJAN } }),
     prisma.order.count({ where: { status: OrderStatus.DELIVERED } }),
+    prisma.order.count({ where: { status: OrderStatus.IN_PREPARATION } }),
+    prisma.order.count({ where: { status: OrderStatus.IN_DELIVERY } }),
   ]);
 
   return (
@@ -70,9 +72,14 @@ export default async function GestionnaireDashboard() {
           <div className="flex flex-col gap-2 sm:flex-row">
             <Link
               href="/gestionnaire/shipments"
-              className="w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
+              className="relative w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
             >
               Voir les colis
+              {toReceive > 0 && (
+                <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                  {toReceive > 99 ? '99+' : toReceive}
+                </span>
+              )}
             </Link>
             <Link
               href="/gestionnaire/shipments"
@@ -88,9 +95,14 @@ export default async function GestionnaireDashboard() {
           <p className="text-slate-600 mb-6">Voir les commandes en attente de livraison</p>
           <Link
             href="/gestionnaire/orders"
-            className="inline-block w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
+            className="relative inline-block w-full rounded bg-slate-900 px-4 py-2 text-center text-white hover:bg-slate-800 sm:w-auto"
           >
             Voir les commandes
+            {(inPreparation + inDelivery) > 0 && (
+              <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1 text-[11px] font-bold text-white">
+                {(inPreparation + inDelivery) > 99 ? '99+' : (inPreparation + inDelivery)}
+              </span>
+            )}
           </Link>
         </div>
       </div>
