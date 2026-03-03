@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
+import { ExternalLink, Star } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { animateFlyToCart } from '@/lib/cartAnimation';
 
@@ -17,13 +18,19 @@ type ProductProp = {
   discount?: number | null;
   category?: { name?: string } | null;
   rating?: number | null;
+  sourceUrl?: string | null;
 };
 
 export default function ProductCard({ product }: { product: ProductProp }) {
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const [adding, setAdding] = useState(false);
   const imageWrapRef = useRef<HTMLDivElement | null>(null);
+  const sourceUrl = String(product.sourceUrl || '').trim();
+  const canOpenSource =
+    session?.user?.role === 'ADMIN' &&
+    /^https?:\/\//i.test(sourceUrl) &&
+    !sourceUrl.includes('example.com');
 
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -81,7 +88,21 @@ export default function ProductCard({ product }: { product: ProductProp }) {
       </Link>
 
       <div className="p-4">
-        <p className="mb-1 text-xs text-slate-500">{product.category?.name}</p>
+        <div className="mb-1 flex items-center justify-between gap-2">
+          <p className="text-xs text-slate-500">{product.category?.name}</p>
+          {canOpenSource ? (
+            <a
+              href={sourceUrl}
+              target="_blank"
+              rel="noreferrer noopener"
+              title="Ouvrir l'article source"
+              aria-label="Ouvrir l'article source"
+              className="inline-flex h-5 w-5 items-center justify-center rounded text-slate-500 hover:bg-slate-100 hover:text-slate-800"
+            >
+              <ExternalLink size={13} />
+            </a>
+          ) : null}
+        </div>
         <h3 className="mb-2 line-clamp-2 text-sm font-semibold group-hover:underline">{product.name}</h3>
 
         <div className="flex items-center justify-between">
@@ -98,8 +119,8 @@ export default function ProductCard({ product }: { product: ProductProp }) {
 
           <div className="flex flex-col items-end">
             <div className="text-center">
-              <span className="text-yellow-400">?</span>
-              <p className="text-xs text-slate-600">{product.rating ?? 'N/A'}</p>
+              <Star size={14} className="mx-auto text-amber-500" />
+              <p className="text-xs text-slate-600">{product.rating && product.rating > 0 ? product.rating : '-'}</p>
             </div>
             <button
               onClick={handleAddToCart}

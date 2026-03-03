@@ -38,18 +38,27 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     ...(category ? { category: { slug: category } } : {}),
   };
 
-  // Fetch products based on search/category
-  const products = await prisma.product.findMany({
-    where,
-    include: {
-      category: true,
-    },
-    take: 50,
-  });
+  const [products, categoryRows, categoryCounts] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        category: true,
+      },
+      take: 50,
+      orderBy: { createdAt: 'desc' },
+    }),
+    prisma.category.findMany({
+      orderBy: [{ featured: 'desc' }, { name: 'asc' }],
+    }),
+    prisma.product.groupBy({
+      by: ['categoryId'],
+      where: { status: ProductStatus.ACTIVE },
+      _count: { _all: true },
+    }),
+  ]);
 
-  const categories = await prisma.category.findMany({
-    where: { featured: true },
-  });
+  const categoryCountById = new Map(categoryCounts.map((row) => [row.categoryId, row._count._all]));
+  const categories = categoryRows.filter((c) => (categoryCountById.get(c.id) || 0) > 0 || c.slug === category);
 
   const getCategoryIcon = (name: string, slug: string): LucideIcon => {
     const value = `${name} ${slug}`.toLowerCase();
@@ -73,20 +82,25 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
         <h1 className="text-4xl font-bold mb-8">Tous les produits</h1>
 
         {/* Search Bar */}
-        <div className="mb-8 flex flex-col gap-2 sm:flex-row">
-          <div className="flex-1 relative">
+        <form action="/products" method="GET" className="mb-8 flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-3 text-slate-400" size={20} />
             <input
               type="text"
+              name="search"
               placeholder="Rechercher un produit..."
               defaultValue={search}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full rounded-lg border border-slate-300 py-2 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-slate-900"
             />
+            {category ? <input type="hidden" name="category" value={category} /> : null}
           </div>
-          <button className="w-full rounded-lg bg-slate-900 px-6 py-2 text-white hover:bg-slate-800 sm:w-auto">
+          <button
+            type="submit"
+            className="w-full rounded-lg bg-slate-900 px-6 py-2 text-white hover:bg-slate-800 sm:w-auto"
+          >
             Rechercher
           </button>
-        </div>
+        </form>
 
         {/* Categories Filter */}
         <div className="flex items-start gap-4 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -94,10 +108,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             const Icon = getCategoryIcon(cat.name, cat.slug);
             const isActive = category === cat.slug;
             const label = displayCategoryName(cat.name, cat.slug);
+            const count = categoryCountById.get(cat.id) || 0;
             return (
               <Link
                 key={cat.id}
-                href={`/products?category=${cat.slug}`}
+                href={`/products?category=${cat.slug}${search ? `&search=${encodeURIComponent(search)}` : ''}`}
                 title={label}
                 aria-label={label}
                 className="flex w-16 shrink-0 flex-col items-center gap-2"
@@ -114,12 +129,13 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
                 <span className={`line-clamp-2 text-center text-xs font-medium ${isActive ? 'text-slate-900' : 'text-slate-600'}`}>
                   {label}
                 </span>
+                <span className="text-[10px] text-slate-400">{count}</span>
               </Link>
             );
           })}
 
           <Link
-            href="/products"
+            href={`/products${search ? `?search=${encodeURIComponent(search)}` : ''}`}
             title="Tous"
             aria-label="Tous"
             className="flex w-14 shrink-0 flex-col items-center gap-2"
@@ -138,6 +154,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
             </span>
           </Link>
         </div>
+        {categories.length === 0 && (
+          <p className="mt-3 text-sm text-slate-500">
+            Aucune categorie visible pour le moment. Importe des articles ou cree des categories depuis l'admin.
+          </p>
+        )}
       </div>
 
       {/* Products Grid */}
@@ -161,6 +182,5 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
     </div>
   );
 }
-
 
 

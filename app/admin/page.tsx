@@ -95,6 +95,12 @@ export default async function AdminDashboard() {
               Voir tous les produits
             </Link>
             <Link
+              href="/admin/imports"
+              className="w-full rounded border border-slate-300 px-4 py-2 text-center hover:bg-slate-50 sm:w-auto"
+            >
+              Importer des articles
+            </Link>
+            <Link
               href="/admin/products/new"
               className="w-full rounded border border-slate-300 px-4 py-2 text-center hover:bg-slate-50 sm:w-auto"
             >
@@ -179,5 +185,4 @@ export default async function AdminDashboard() {
     </div>
   );
 }
-
 

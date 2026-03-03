@@ -129,6 +129,8 @@ model Product {
   status          ProductStatus @default(ACTIVE)
   featured        Boolean       @default(false)
   rating          Float?        @default(0)
+  sizes           String[]      @default([])
+  variants        Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
